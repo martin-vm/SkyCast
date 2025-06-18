@@ -12,7 +12,7 @@ public class WeatherService
     public WeatherService(HttpClient http, IConfiguration config)
     {
         _http = http;
-        _key = config["OPENWEATHER_KEY"] ?? "6d0a6353ba4e7b76bdabb64abea3e214";
+        _key = config["OpenWeather:key"] ?? "6d0a6353ba4e7b76bdabb64abea3e214";
     }
 
     public async Task<WeatherDto?> GetByCityAsync(string city)

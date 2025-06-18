@@ -13,6 +13,6 @@ builder.Services.AddHttpClient<WeatherService>();
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
-var envKey = builder.Configuration["OPENWEATHER_KEY"];
+var envKey = builder.Configuration["OpenWeather:key"];
 
 await builder.Build().RunAsync();
