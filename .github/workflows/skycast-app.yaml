@@ -1,12 +1,12 @@
 name: Build & Deploy BlazorApp
 
 on:
-    push:
-        branches: ["main"]
-    
+  push:
+    branches: ["main"]
+
 env: 
-    DOTNET_VERSION: '9.0.x'
-    NODE_VERSION: '22.x'
+  DOTNET_VERSION: '9.0.x'
+  NODE_VERSION: '22.x'
 
 permissions:
   contents: write
@@ -14,58 +14,48 @@ permissions:
   id-token: write
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-    
-        steps:
-            # 1. Descargar el código
-            - name: Descargar código
-              uses: actions/checkout@v4
+  build:
+    runs-on: ubuntu-latest
 
-            # 2. Instalar .NET
-            - name: Setup -NET
-              uses: actions/setup-dotnet@v4
-              with:
-                dotnet-version: ${{ env.DOTNET_VERSION }}
+    steps:
+      # 1. Clonar el código
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
 
-            # 3. Paquetes Nuget
-            - uses: actions/cache@v3
-              with:
-                path: ~/.nuget/packages
-                key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+      # 2. Instalar .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-            # Instalar Node
-            - name: Setup Node
-              uses: actions/setup-node@v4
-              with:
-                node-version: ${{ env.NODE_VERSION }}
+      # 3. Instalar Node.js
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
-            # Restore an publish
-            - name: Publicar APP Blazor
-              run: |
-                dotnet restore
-                # Inyectar la API Key
-                echo "{\"OpenWeather\":{\"Key\":\"${{ secrets.OPENWEATHER_KEY }}\"}}" > appsettings.Production.json
-                dotnet publish SkyCast/SkyCast.csproj -c Release -o publish
+      # 4. Cache de paquetes NuGet
+      - name: Cache NuGet
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
 
-            - name: Listar salida
-              run: |
-                echo "Contenido Generado"
-                ls -R publish | head -n 100
+      # 5. Restaurar y publicar Blazor
+      - name: Publicar app Blazor WebAssembly
+        run: |
+          dotnet restore
+          echo "{\"OpenWeather\":{\"Key\":\"${{ secrets.OPENWEATHER_KEY }}\"}}" > appsettings.Production.json
+          dotnet publish SkyCast/SkyCast.csproj -c Release -o publish
 
-            # Artifact
-            - uses: actions/upload-artifact@v4
-              with:
-                name: publish
-                path: publish
+      # 6. Verificar contenido generado
+      - name: Ver contenido de publicación
+        run: ls -lR publish
 
-            - name: Add .nojekyll file
-              run: touch publish/.nojekyll
-              
-            # Despliegue
-            - name: Deploy to Pages
-              uses: peaceiris/actions-gh-pages@v4
-              with:
-                github_token: ${{ secrets.GITHUB_TOKEN }}
-                publish_dir: SkyCast/publish/wwwroot
-                force_orphan: true
+      # 7. Deploy a GitHub Pages (usa wwwroot)
+      - name: Deploy a GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: publish/wwwroot
+          force_orphan: true
